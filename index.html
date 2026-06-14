@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>🌱 身體觀察日記</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#F6E9E0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="page-shell">
+    <header class="hero-card">
+      <div class="hero-title">
+        <span class="emoji">🧋</span>
+        <div>
+          <h1>🌱 身體觀察日記</h1>
+          <p>像生活日記一樣，溫柔紀錄腰圍與體重的平均趨勢。</p>
+        </div>
+      </div>
+    </header>
+
+    <section class="panel-card form-panel">
+      <div class="panel-heading">
+        <h2>新增日記紀錄</h2>
+        <p>日期預設今天，可手動調整。</p>
+      </div>
+      <form id="recordForm">
+        <div id="formError" class="form-error hidden" role="alert" aria-live="polite"></div>
+        <label>
+          <span>日期</span>
+          <input id="dateInput" type="date" required aria-describedby="formError" />
+        </label>
+        <label>
+          <span>體重（公斤）</span>
+          <input id="weightInput" type="number" step="0.1" min="0" placeholder="例如 55.5" required />
+        </label>
+        <label>
+          <span>腰圍（公分）</span>
+          <input id="waistInput" type="number" step="0.1" min="0" placeholder="例如 68.3" required />
+        </label>
+        <label>
+          <span>備註</span>
+          <textarea id="noteInput" rows="2" placeholder="寫下今天的感受或提醒"></textarea>
+        </label>
+        <div class="form-actions">
+          <button type="submit" class="button-primary">儲存紀錄</button>
+          <button type="button" id="cancelEditButton" class="button-secondary hidden">取消編輯</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel-card stats-panel">
+      <div class="panel-heading">
+        <h2>最近紀錄</h2>
+        <p>單日記錄是生活片段，請留意近 7 日、14 日的平均變化。</p>
+      </div>
+      <div class="data-actions">
+        <button type="button" id="exportCsvButton" class="button-secondary">匯出 CSV</button>
+        <button type="button" id="importCsvButton" class="button-secondary">匯入 CSV</button>
+        <input id="importCsvInput" type="file" accept=".csv,text/csv" hidden />
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card purple-card">
+          <h3>7 日平均腰圍</h3>
+          <p id="avgWaist7">—</p>
+        </div>
+        <div class="stat-card cream-card">
+          <h3>14 日平均腰圍</h3>
+          <p id="avgWaist14">—</p>
+        </div>
+        <div class="stat-card pink-card">
+          <h3>7 日平均體重</h3>
+          <p id="avgWeight7">—</p>
+        </div>
+        <div class="stat-card green-card">
+          <h3>14 日平均體重</h3>
+          <p id="avgWeight14">—</p>
+        </div>
+      </div>
+      <p id="dynamicTrend" class="trend-tip">🌷 趨勢持續改善中　☁️ 單日波動很正常，請觀察平均值　💧 今天的數字可能受到水分影響</p>
+    </section>
+
+    <section class="panel-card focus-panel">
+      <div class="panel-heading">
+        <h2>🌱 本週觀察重點</h2>
+        <p id="weeklyFocus">腰圍變化與體重變化都值得溫柔注意，系統會優先分析腰圍趨勢。</p>
+      </div>
+    </section>
+
+    <section class="panel-card chart-panel">
+      <div class="panel-heading">
+        <h2>最近記錄走勢</h2>
+        <p>最近 14 日的體重與腰圍走勢，像生活筆記一樣收藏。</p>
+      </div>
+      <div class="chart-wrapper">
+        <canvas id="trendChart" aria-label="體重與腰圍折線圖" role="img"></canvas>
+      </div>
+    </section>
+
+    <section class="panel-card list-panel">
+      <div class="panel-heading">
+        <h2>紀錄清單</h2>
+        <p>可修改或刪除單筆紀錄。</p>
+      </div>
+      <div id="recordList" class="record-list"></div>
+    </section>
+  </div>
+
+  <div id="toast" class="toast" aria-live="polite"></div>
+  <div id="confirmModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-backdrop"></div>
+    <div class="modal-card">
+      <h3 id="modalTitle">⚠️ 與前次紀錄差異較大</h3>
+      <div class="modal-content">
+        <p>前次紀錄：</p>
+        <p id="modalPrevious">體重 XX 公斤<br>腰圍 XX 公分</p>
+        <p>本次紀錄：</p>
+        <p id="modalCurrent">體重 XX 公斤<br>腰圍 XX 公分</p>
+        <p class="modal-note">請確認是否輸入正確。</p>
+      </div>
+      <div class="modal-actions">
+        <button id="confirmSaveButton" class="button-primary">仍要儲存</button>
+        <button id="cancelSaveButton" class="button-secondary">返回修改</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
