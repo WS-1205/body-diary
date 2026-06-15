@@ -24,10 +24,15 @@ const modalPrevious = document.getElementById('modalPrevious');
 const modalCurrent = document.getElementById('modalCurrent');
 const confirmSaveButton = document.getElementById('confirmSaveButton');
 const cancelSaveButton = document.getElementById('cancelSaveButton');
+const deleteConfirmModal = document.getElementById('deleteConfirmModal');
+const confirmDeleteButton = document.getElementById('confirmDeleteButton');
+const cancelDeleteButton = document.getElementById('cancelDeleteButton');
+const deleteModalInfo = document.getElementById('deleteModalInfo');
 let records = [];
 let editingId = null;
 let trendChart = null;
 let pendingOutlier = null;
+let pendingDeleteId = null;
 let lastTrendMessage = '';
 
 function getTodayDate() {
@@ -313,6 +318,28 @@ function renderChart() {
   }
 }
 
+function getWeekStartDate(date) {
+  const d = new Date(date + 'T00:00:00');
+  const day = d.getDay() || 7;
+  const diff = d.getDate() - day + 1;
+  return new Date(d.setDate(diff));
+}
+
+function getWeekKey(date) {
+  const start = getWeekStartDate(date);
+  const year = start.getFullYear();
+  const month = String(start.getMonth() + 1).padStart(2, '0');
+  const day = String(start.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function isCurrentWeek(date) {
+  const today = new Date();
+  const currentWeekStart = getWeekStartDate(today.toISOString().split('T')[0]);
+  const weekStart = getWeekStartDate(date);
+  return currentWeekStart.getTime() === weekStart.getTime();
+}
+
 function renderRecords() {
   recordList.innerHTML = '';
   if (!records.length) {
@@ -320,24 +347,76 @@ function renderRecords() {
     return;
   }
 
+  const groupedByWeek = {};
   records.forEach(item => {
-    const card = document.createElement('article');
-    card.className = 'record-item';
-    card.innerHTML = `
-      <div class="record-top">
-        <div>
-          <div class="record-date">${formatLocaleDate(item.date)}${item.isOutlier ? ' • 異常紀錄' : ''}</div>
-          <div class="record-meta">體重 ${item.weight.toFixed(1)} 公斤 · 腰圍 ${item.waist.toFixed(1)} 公分</div>
-        </div>
-        <div class="record-actions">
-          <button class="action-button edit" data-id="${item.id}">修改</button>
-          <button class="action-button delete" data-id="${item.id}">刪除</button>
-        </div>
-      </div>
-      ${item.note ? `<p class="record-note">${item.note}</p>` : ''}
-    `;
+    const weekKey = getWeekKey(item.date);
+    if (!groupedByWeek[weekKey]) {
+      groupedByWeek[weekKey] = [];
+    }
+    groupedByWeek[weekKey].push(item);
+  });
 
-    recordList.appendChild(card);
+  const weekKeys = Object.keys(groupedByWeek).sort().reverse();
+
+  weekKeys.forEach(weekKey => {
+    const weekRecords = groupedByWeek[weekKey];
+    const firstRecord = weekRecords[0];
+    const weekStart = getWeekStartDate(firstRecord.date);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+
+    const weekStartStr = formatLocaleDate(weekStart.toISOString().split('T')[0]);
+    const weekEndStr = formatLocaleDate(weekEnd.toISOString().split('T')[0]);
+    const isThisWeek = isCurrentWeek(firstRecord.date);
+    const weekGroupId = `week-${weekKey}`;
+
+    const weekContainer = document.createElement('div');
+    weekContainer.className = 'week-group';
+
+    const weekHeader = document.createElement('button');
+    weekHeader.className = 'week-header';
+    weekHeader.innerHTML = `
+      <span class="week-toggle">▼</span>
+      <span class="week-dates">${weekStartStr} ~ ${weekEndStr}</span>
+      <span class="week-count">（${weekRecords.length}筆）</span>
+    `;
+    weekHeader.type = 'button';
+
+    const recordsContainer = document.createElement('div');
+    recordsContainer.className = 'week-records';
+    recordsContainer.id = weekGroupId;
+    if (!isThisWeek) {
+      recordsContainer.classList.add('collapsed');
+      weekHeader.classList.add('collapsed');
+    }
+
+    weekRecords.forEach(item => {
+      const card = document.createElement('article');
+      card.className = 'record-item';
+      card.innerHTML = `
+        <div class="record-top">
+          <div>
+            <div class="record-date">${formatLocaleDate(item.date)}${item.isOutlier ? ' • 異常紀錄' : ''}</div>
+            <div class="record-meta">體重 ${item.weight.toFixed(1)} 公斤 · 腰圍 ${item.waist.toFixed(1)} 公分</div>
+          </div>
+          <div class="record-actions">
+            <button class="action-button edit" data-id="${item.id}">修改</button>
+            <button class="action-button delete" data-id="${item.id}">刪除</button>
+          </div>
+        </div>
+        ${item.note ? `<p class="record-note">${item.note}</p>` : ''}
+      `;
+      recordsContainer.appendChild(card);
+    });
+
+    weekHeader.addEventListener('click', () => {
+      recordsContainer.classList.toggle('collapsed');
+      weekHeader.classList.toggle('collapsed');
+    });
+
+    weekContainer.appendChild(weekHeader);
+    weekContainer.appendChild(recordsContainer);
+    recordList.appendChild(weekContainer);
   });
 
   recordList.querySelectorAll('.action-button.edit').forEach(button => {
@@ -345,7 +424,7 @@ function renderRecords() {
   });
 
   recordList.querySelectorAll('.action-button.delete').forEach(button => {
-    button.addEventListener('click', () => deleteRecord(button.dataset.id));
+    button.addEventListener('click', () => showDeleteConfirmModal(button.dataset.id));
   });
 }
 
@@ -359,6 +438,21 @@ function startEdit(id) {
   noteInput.value = item.note || '';
   cancelEditButton.classList.remove('hidden');
   showToast('已載入紀錄，可進行修改或取消。');
+}
+
+function showDeleteConfirmModal(id) {
+  const record = records.find(item => item.id === id);
+  if (!record) return;
+  pendingDeleteId = id;
+  deleteModalInfo.innerHTML = `體重 ${record.weight.toFixed(1)} 公斤 · 腰圍 ${record.waist.toFixed(1)} 公分 · ${formatLocaleDate(record.date)}`;
+  deleteConfirmModal.classList.remove('hidden');
+  document.body.classList.add('modal-open');
+}
+
+function closeDeleteConfirmModal() {
+  deleteConfirmModal.classList.add('hidden');
+  document.body.classList.remove('modal-open');
+  pendingDeleteId = null;
 }
 
 function deleteRecord(id) {
@@ -559,6 +653,16 @@ function init() {
       pendingOutlier = null;
       closeConfirmModal();
     });
+  }
+  if (confirmDeleteButton) {
+    confirmDeleteButton.addEventListener('click', () => {
+      if (!pendingDeleteId) return;
+      deleteRecord(pendingDeleteId);
+      closeDeleteConfirmModal();
+    });
+  }
+  if (cancelDeleteButton) {
+    cancelDeleteButton.addEventListener('click', closeDeleteConfirmModal);
   }
   [dateInput, weightInput, waistInput].forEach(input => {
     input.addEventListener('input', clearFormError);
