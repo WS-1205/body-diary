@@ -280,14 +280,24 @@ function renderChart() {
         y: {
           type: 'linear',
           position: 'left',
+          min: 55,
+          max: 75,
+          ticks: {
+            color: '#ff8fb4',
+            stepSize: 5,
+          },
           grid: { color: 'rgba(156, 132, 123, 0.12)' },
-          ticks: { color: '#5c4e4a' },
         },
         y1: {
           type: 'linear',
           position: 'right',
+          min: 80,
+          max: 100,
+          ticks: {
+            color: '#9f88ff',
+            stepSize: 5,
+          },
           grid: { drawOnChartArea: false },
-          ticks: { color: '#7f6f85' },
         },
       },
       plugins: {
