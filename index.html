@@ -16,7 +16,6 @@
   <div class="page-shell">
     <header class="hero-card">
       <div class="hero-title">
-        <span class="emoji">🧋</span>
         <div>
           <h1>🌱 身體觀察日記</h1>
           <p>像生活日記一樣，溫柔紀錄腰圍與體重的平均趨勢。</p>
@@ -126,6 +125,20 @@
       <div class="modal-actions">
         <button id="confirmSaveButton" class="button-primary">仍要儲存</button>
         <button id="cancelSaveButton" class="button-secondary">返回修改</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="deleteConfirmModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+    <div class="modal-backdrop"></div>
+    <div class="modal-card">
+      <h3 id="deleteModalTitle">確定要刪除此筆資料嗎？</h3>
+      <div class="modal-content">
+        <p id="deleteModalInfo"></p>
+      </div>
+      <div class="modal-actions">
+        <button id="confirmDeleteButton" class="button-primary">確認刪除</button>
+        <button id="cancelDeleteButton" class="button-secondary">取消</button>
       </div>
     </div>
   </div>

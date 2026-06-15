@@ -106,6 +106,17 @@ canvas { width: 100% !important; max-height: 320px; }
 body.modal-open {
   overflow: hidden;
 }
+.week-group { display: grid; gap: 0; margin-bottom: 12px; }
+.week-header { display: flex; align-items: center; gap: 8px; width: 100%; background: rgba(255, 255, 255, 0.92); border: none; border-radius: 18px 18px 0 0; padding: 14px 16px; cursor: pointer; text-align: left; font-weight: 600; color: #4a3d3d; border: 1px solid rgba(213, 181, 174, 0.34); border-bottom: none; transition: background-color 0.2s ease; }
+.week-header:hover { background: rgba(255, 255, 255, 0.98); }
+.week-header.collapsed { border-radius: 18px; border-bottom: 1px solid rgba(213, 181, 174, 0.34); }
+.week-toggle { display: inline-flex; font-size: 0.8rem; transition: transform 0.2s ease; }
+.week-header.collapsed .week-toggle { transform: rotate(-90deg); }
+.week-dates { flex: 1; }
+.week-count { color: #6f5d56; font-size: 0.9rem; font-weight: 500; }
+.week-records { display: grid; gap: 12px; background: transparent; border-radius: 0 0 18px 18px; border-left: 1px solid rgba(213, 181, 174, 0.34); border-right: 1px solid rgba(213, 181, 174, 0.34); border-bottom: 1px solid rgba(213, 181, 174, 0.34); padding: 12px 12px; }
+.week-records.collapsed { display: none; }
+.week-records .record-item { margin-bottom: 0; }
 @keyframes pulse { 0% { transform: translateX(-50%) translateY(0) scale(0.96); } 50% { transform: translateX(-50%) translateY(0) scale(1.03); } 100% { transform: translateX(-50%) translateY(0) scale(1); } }
 @media (min-width: 720px) {
   .form-actions { justify-content: flex-end; }
